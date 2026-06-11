@@ -1,0 +1,883 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HSK 1">
+<meta name="theme-color" content="#f0f0f0">
+<title>Тренажёр HSK 1 · 标准课程</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; min-height: 100vh; overscroll-behavior: none; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    background: #f0f0f0; color: #333; display: flex; justify-content: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .container { width: 100%; max-width: 620px; min-height: 100vh; padding: 14px 14px 24px; display: flex; flex-direction: column; }
+  h1 { text-align: center; font-size: 18px; margin: 4px 0 4px; color: #333; font-weight: 700; }
+  h1 .zh { color: #c00; }
+  .top-row { display: flex; justify-content: space-between; align-items: center; color: #888; font-size: 13px; margin-bottom: 10px; min-height: 28px; }
+  .seed {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; background: #fff; padding: 4px 10px;
+    border-radius: 8px; color: #c00; font-weight: 700; letter-spacing: 1px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  button {
+    -webkit-appearance: none; appearance: none; border: 0; border-radius: 12px; padding: 13px 8px;
+    color: #fff; font: inherit; font-size: 14px; font-weight: 650; cursor: pointer; user-select: none;
+    transition: transform .1s, opacity .15s, background .15s, color .15s;
+  }
+  button:active { transform: scale(.97); }
+  .tabs, .switch, .quiz-switch {
+    display: grid; gap: 6px; background: #e2e2e7; border-radius: 12px; padding: 4px; margin-bottom: 12px;
+  }
+  .tabs { grid-template-columns: repeat(4, 1fr); }
+  .switch, .quiz-switch { grid-template-columns: 1fr 1fr; }
+  .tabs button, .switch button, .quiz-switch button {
+    background: transparent; color: #555; border-radius: 8px; padding: 9px 4px; font-size: 13px;
+  }
+  .tabs button.active, .switch button.active, .quiz-switch button.active {
+    background: #fff; color: #c00; box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .lesson-row { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 8px; margin-bottom: 8px; scrollbar-width: none; }
+  .lesson-row::-webkit-scrollbar { display: none; }
+  .lesson-btn {
+    flex: 0 0 auto; background: #fff; color: #555; border: 1px solid #ddd; border-radius: 18px;
+    padding: 7px 13px; font-size: 13px; white-space: nowrap;
+  }
+  .lesson-btn.active { background: #c00; color: #fff; border-color: #c00; }
+  .pane { display: none; }
+  .pane.active { display: block; }
+  .card, .quiz-q, .hz-stage {
+    background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.06); margin-bottom: 12px;
+  }
+  .card {
+    min-height: 214px; padding: 26px 18px; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; cursor: pointer; user-select: none;
+  }
+  .front, .back { width: 100%; text-align: center; }
+  .back { display: none; }
+  .card.revealed .back { display: block; }
+  .card.revealed .front { opacity: .45; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px dashed #ddd; }
+  .chinese { font-size: 31px; font-weight: 750; color: #c00; line-height: 1.28; margin-bottom: 6px; word-break: break-word; }
+  .hanzi-big { font-size: 86px; line-height: 1; }
+  .pinyin { font-size: 16px; color: #777; line-height: 1.35; font-style: italic; word-break: break-word; }
+  .russian { font-size: 20px; color: #005; line-height: 1.35; word-break: break-word; }
+  .meta { color: #aaa; font-size: 12px; margin-top: 8px; }
+  .hint, .msg { text-align: center; color: #aaa; font-size: 12px; min-height: 16px; margin-bottom: 10px; font-style: italic; }
+  .msg { color: #c00; }
+  .buttons { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+  .btn-prev { background: #7b8a9c; }
+  .btn-next { background: #f5a623; }
+  .btn-reveal { background: #70c537; }
+  .btn-shuffle { background: #8e8e93; }
+  .btn-seed { background: #5856d6; }
+  .btn-anim { background: #2fb85f; }
+  .btn-loop { background: #007aff; }
+  .btn-write { background: #ff9500; }
+  .seed-panel { display: none; background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .seed-panel.open { display: block; }
+  .seed-panel label { display: block; color: #777; font-size: 12px; margin-bottom: 6px; }
+  .seed-panel-row { display: flex; gap: 6px; }
+  .seed-panel input {
+    flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; outline: 0;
+    color: #c00; font: 700 16px ui-monospace, "SF Mono", Menlo, monospace; text-align: center; letter-spacing: 2px;
+  }
+  .seed-info { font-size: 11px; color: #aaa; text-align: center; margin-top: 6px; line-height: 1.4; }
+  .hz-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-height: 168px; overflow-y: auto; padding: 2px; margin-bottom: 12px; }
+  .hz-chip {
+    width: 44px; height: 44px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+    background: #fff; color: #333; border: 1px solid #e2e2e7; border-radius: 10px; font-size: 24px; padding: 0;
+  }
+  .hz-chip.active { background: #c00; color: #fff; border-color: #c00; }
+  .hz-stage { padding: 18px; display: flex; flex-direction: column; align-items: center; }
+  #hz-target {
+    width: 240px; height: 240px; display: flex; align-items: center; justify-content: center;
+    border: 1px dashed #e0e0e0; border-radius: 12px; background:
+      linear-gradient(90deg, transparent 49.8%, #eee 50%, transparent 50.2%),
+      linear-gradient(transparent 49.8%, #eee 50%, transparent 50.2%), #fff;
+  }
+  #hz-target svg { width: 100%; height: 100%; }
+  .hz-info { text-align: center; margin-top: 10px; }
+  .hz-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+  .quiz-q { padding: 22px 16px; text-align: center; }
+  .quiz-q .russian { margin-bottom: 4px; }
+  .quiz-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .quiz-opt {
+    min-height: 82px; background: #fff; color: #333; border: 1px solid #e2e2e7; border-radius: 14px;
+    padding: 12px 8px; font-size: 25px; line-height: 1.2;
+  }
+  .quiz-opt.correct { background: #d8f5d8; border-color: #34c759; color: #1a7a1a; }
+  .quiz-opt.wrong { background: #fde0e0; border-color: #ff3b30; color: #c00; }
+  .quiz-opt.disabled { pointer-events: none; }
+  .quiz-score { text-align: center; font-size: 14px; color: #666; margin-bottom: 10px; }
+  .install-hint { margin-top: auto; padding: 16px 8px 4px; text-align: center; color: #999; font-size: 11px; line-height: 1.5; }
+  @media (max-width: 380px) {
+    .container { padding-left: 10px; padding-right: 10px; }
+    .chinese { font-size: 26px; }
+    .russian { font-size: 18px; }
+    .tabs button { font-size: 12px; }
+    #hz-target { width: 206px; height: 206px; }
+    .quiz-opt { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<main class="container">
+  <h1>Тренажёр HSK 1 · <span class="zh">标准课程</span></h1>
+  <div class="top-row">
+    <span id="counter">—</span>
+    <span class="seed" id="seed-display">—</span>
+  </div>
+
+  <nav class="tabs" id="tabs" aria-label="Режимы">
+    <button data-tab="words" class="active">Слова</button>
+    <button data-tab="hanzi">Иероглифы</button>
+    <button data-tab="grammar">Грамматика</button>
+    <button data-tab="quiz">Тест</button>
+  </nav>
+
+  <div class="lesson-row" id="lesson-row"></div>
+
+  <section class="pane active" id="pane-words">
+    <div class="switch" id="word-mode">
+      <button data-mode="ru2zh" class="active">RU → 中文</button>
+      <button data-mode="zh2ru">中文 → RU</button>
+    </div>
+    <div class="card" id="word-card">
+      <div class="front" id="word-front"></div>
+      <div class="back" id="word-back"></div>
+    </div>
+    <div class="hint">Нажмите на карточку, чтобы увидеть ответ</div>
+    <div class="buttons">
+      <button class="btn-prev" id="word-prev">◀ Назад</button>
+      <button class="btn-reveal" id="word-reveal">Показать</button>
+      <button class="btn-next" id="word-next">Далее ▶</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-shuffle" id="btn-shuffle">Новый сид</button>
+      <button class="btn-seed" id="btn-seed">Ввести сид</button>
+    </div>
+    <div class="seed-panel" id="seed-panel">
+      <label for="seed-input">Введите 4-значный сид (1000-9999):</label>
+      <div class="seed-panel-row">
+        <input type="tel" id="seed-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="0000">
+        <button class="btn-seed" id="seed-apply">Открыть</button>
+      </div>
+      <div class="seed-info">Сид задаёт порядок карточек. Прогресс сохраняется на этом устройстве.</div>
+    </div>
+  </section>
+
+  <section class="pane" id="pane-hanzi">
+    <div class="hz-grid" id="hz-grid"></div>
+    <div class="hz-stage">
+      <div id="hz-target"></div>
+      <div class="hz-info" id="hz-info"></div>
+    </div>
+    <div class="msg" id="hz-msg"></div>
+    <div class="hz-controls">
+      <button class="btn-anim" id="hz-animate">▶ Анимация</button>
+      <button class="btn-loop" id="hz-loop">↻ Цикл</button>
+      <button class="btn-write" id="hz-quiz">✍ Сам</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-prev" id="hz-prev">◀ Пред.</button>
+      <button class="btn-next" id="hz-next">След. ▶</button>
+    </div>
+  </section>
+
+  <section class="pane" id="pane-grammar">
+    <div class="switch" id="grammar-mode">
+      <button data-mode="ru2zh" class="active">RU → 中文</button>
+      <button data-mode="zh2ru">中文 → RU</button>
+    </div>
+    <div class="card" id="grammar-card">
+      <div class="front" id="grammar-front"></div>
+      <div class="back" id="grammar-back"></div>
+    </div>
+    <div class="hint">Переведите предложение, затем нажмите для проверки</div>
+    <div class="buttons">
+      <button class="btn-prev" id="grammar-prev">◀ Назад</button>
+      <button class="btn-reveal" id="grammar-reveal">Показать</button>
+      <button class="btn-next" id="grammar-next">Далее ▶</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn-shuffle" id="grammar-shuffle">Перемешать</button>
+    </div>
+  </section>
+
+  <section class="pane" id="pane-quiz">
+    <div class="quiz-switch" id="quiz-mode">
+      <button data-mode="ru2zh" class="active">Перевод → 中文</button>
+      <button data-mode="zh2ru">中文 → перевод</button>
+    </div>
+    <div class="quiz-score" id="quiz-score">Счёт: 0 / 0</div>
+    <div class="quiz-q" id="quiz-q"></div>
+    <div class="quiz-opts" id="quiz-opts"></div>
+    <div class="btn-row">
+      <button class="btn-next" id="quiz-next">Следующий ▶</button>
+    </div>
+  </section>
+
+  <div class="install-hint">
+    Можно добавить на главный экран телефона через меню браузера. Для анимации порядка черт нужен интернет.
+  </div>
+</main>
+
+<script>
+// ====== ДАННЫЕ ТРЕНАЖЁРА HSK 1 ======
+// VOCAB: [汉字, pīnyīn, перевод, урок]
+const VOCAB = [
+  // L1
+  ["你好","nǐ hǎo","привет","L1"],["您好","nín hǎo","здравствуйте","L1"],
+  ["吗","ma","вопросительная частица (да/нет)","L1"],["好","hǎo","хорошо","L1"],
+  ["你","nǐ","ты","L1"],["我","wǒ","я","L1"],["他","tā","он","L1"],
+  ["您","nín","Вы (уважительное)","L1"],["她","tā","она","L1"],
+  ["你们","nǐmen","вы (мн.ч.)","L1"],["我们","wǒmen","мы","L1"],
+  ["他们","tāmen","они","L1"],["她们","tāmen","они (жен.)","L1"],
+  ["很","hěn","очень","L1"],["也","yě","тоже","L1"],
+  ["你们好","nǐmen hǎo","привет (нескольким)","L1"],["你好吗","nǐ hǎo ma","как дела","L1"],
+  ["对不起","duìbuqǐ","извини(те)","L1"],["没关系","méi guānxi","ничего страшного","L1"],
+  ["我也很好","wǒ yě hěn hǎo","у меня тоже всё хорошо","L1"],
+  ["高兴","gāoxìng","радостный","L1"],["忙","máng","занятой","L1"],
+  ["生气","shēngqì","злой","L1"],["认识","rènshi","познакомиться; знать","L1"],
+  // L2
+  ["谢谢","xièxie","спасибо","L2"],["不用谢","bùyòng xiè","не стоит благодарности","L2"],
+  ["不客气","bù kèqi","не за что","L2"],["再见","zàijiàn","до свидания","L2"],
+  // L3
+  ["叫","jiào","звать, зовут","L3"],["什么","shénme","что","L3"],["名字","míngzi","имя","L3"],
+  ["老师","lǎoshī","учитель","L3"],["是","shì","быть, являться","L3"],["学生","xuésheng","ученик","L3"],
+  ["国","guó","страна","L3"],["中国","Zhōngguó","Китай","L3"],["人","rén","человек","L3"],
+  ["中国人","Zhōngguó rén","китаец","L3"],["美国","Měiguó","США","L3"],["俄罗斯","Èluósī","Россия","L3"],
+  ["法国","Fǎguó","Франция","L3"],["德国","Déguó","Германия","L3"],["英国","Yīngguó","Великобритания","L3"],
+  ["日本","Rìběn","Япония","L3"],["这","zhè","это","L3"],["书","shū","книга","L3"],
+  ["李月","Lǐ Yuè","Ли Юэ (имя)","L3"],["不","bù","нет, не","L3"],
+  // L4
+  ["谁","shéi","кто","L4"],["的","de","частица (чей)","L4"],["汉语","hànyǔ","китайский язык","L4"],
+  ["语言","yǔyán","язык","L4"],["哪","nǎ","какой; который","L4"],["同学","tóngxué","одноклассник","L4"],
+  ["呢","ne","частица переспроса","L4"],["朋友","péngyou","друг","L4"],
+  ["个","gè","счётное слово (штука)","L4"],["本","běn","счётное слово (книги)","L4"],
+  // L5
+  ["家","jiā","семья; дом","L5"],["有","yǒu","иметь, есть","L5"],["口","kǒu","счётное (члены семьи)","L5"],
+  ["女儿","nǚ'ér","дочь","L5"],["几","jǐ","сколько (до 10)","L5"],["岁","suì","лет; возраст","L5"],
+  ["今年","jīnnián","этот год","L5"],["了","le","частица (смена ситуации)","L5"],["多","duō","много","L5"],
+  ["大","dà","большой","L5"],["小","xiǎo","маленький","L5"],["爷爷","yéye","дедушка","L5"],
+  ["奶奶","nǎinai","бабушка","L5"],["爸爸","bàba","папа","L5"],["妈妈","māma","мама","L5"],
+  ["哥哥","gēge","старший брат","L5"],["姐姐","jiějie","старшая сестра","L5"],
+  ["弟弟","dìdi","младший брат","L5"],["妹妹","mèimei","младшая сестра","L5"],
+  // L6
+  ["会","huì","мочь, уметь (научиться)","L6"],["说","shuō","говорить","L6"],["菜","cài","еда; блюдо","L6"],
+  ["做","zuò","делать (готовить)","L6"],["好吃","hǎochī","вкусный","L6"],["写","xiě","писать","L6"],
+  ["汉字","hànzì","иероглифы","L6"],["字","zì","иероглиф; знак","L6"],["怎么","zěnme","как, каким образом","L6"],
+  ["读","dú","читать","L6"],["咖啡","kāfēi","кофе","L6"],["公园","gōngyuán","парк","L6"],
+  ["机场","jīchǎng","аэропорт","L6"],["车站","chēzhàn","вокзал, остановка, станция","L6"],
+  ["英语","yīngyǔ","английский","L6"],["德语","déyǔ","немецкий","L6"],["日语","rìyǔ","японский","L6"],
+  ["法语","fǎyǔ","французский","L6"],["俄语","éyǔ","русский язык","L6"],
+  // L7
+  ["请","qǐng","пожалуйста","L7"],["问","wèn","спросить","L7"],["请问","qǐngwèn","скажите, пожалуйста","L7"],
+  ["今天","jīntiān","сегодня","L7"],["号","hào","число (даты)","L7"],["月","yuè","месяц","L7"],
+  ["星期","xīngqī","неделя","L7"],["昨天","zuótiān","вчера","L7"],["明天","míngtiān","завтра","L7"],
+  ["去","qù","идти, ехать","L7"],["学校","xuéxiào","школа","L7"],["看","kàn","смотреть, читать","L7"],
+  ["生日","shēngrì","день рождения","L7"],["时间","shíjiān","время","L7"],["银行","yínháng","банк","L7"],
+  ["词典","cídiǎn","словарь","L7"],["蓝色","lánsè","синий","L7"],["学习","xuéxí","учить, учиться","L7"],
+  ["饭馆","fànguǎn","кафе, ресторан","L7"],
+  // L8
+  ["想","xiǎng","хотеть; скучать","L8"],["喝","hē","пить","L8"],["茶","chá","чай","L8"],
+  ["吃","chī","есть, кушать","L8"],["米饭","mǐfàn","рис","L8"],["上午","shàngwǔ","первая половина дня","L8"],
+  ["下午","xiàwǔ","вторая половина дня","L8"],["商店","shāngdiàn","магазин","L8"],["买","mǎi","покупать","L8"],
+  ["杯子","bēizi","кружка, стакан","L8"],["多少","duōshao","сколько","L8"],["少","shǎo","мало","L8"],
+  ["钱","qián","деньги","L8"],["块","kuài","юань (разг.); кусок","L8"],["那","nà","тот","L8"],
+  ["手机","shǒujī","телефон (моб.)","L8"],["手镯","shǒuzhuó","браслет","L8"],["手表","shǒubiǎo","наручные часы","L8"],
+  ["手套","shǒutào","перчатки","L8"],["百","bǎi","сто","L8"],
+  // L9
+  ["猫","māo","кот, кошка","L9"],["狗","gǒu","собака","L9"],["在","zài","находиться; в","L9"],
+  ["那儿","nàr","там","L9"],["这儿","zhèr","здесь","L9"],["椅子","yǐzi","стул","L9"],
+  ["上面","shàngmiàn","на, над","L9"],["下面","xiàmiàn","под","L9"],["哪儿","nǎr","где","L9"],
+  ["工作","gōngzuò","работа, работать","L9"],["儿子","érzi","сын","L9"],["医院","yīyuàn","больница","L9"],
+  ["医生","yīshēng","врач","L9"],["面包","miànbāo","хлеб","L9"],["面条","miàntiáo","лапша","L9"],
+  ["电脑","diànnǎo","компьютер","L9"],["电话","diànhuà","телефон (аппарат)","L9"],
+  // L10
+  ["桌子","zhuōzi","стол","L10"],["和","hé","и","L10"],["里","lǐ","внутри","L10"],
+  ["前面","qiánmiàn","впереди","L10"],["后面","hòumiàn","сзади","L10"],["王方","Wáng Fāng","Ван Фан (имя)","L10"],
+  ["谢鹏","Xiè Péng","Се Пэн (имя)","L10"],["没有","méiyǒu","нет, нету","L10"],["坐","zuò","сидеть, садиться","L10"],
+  ["能","néng","мочь (физически); можно","L10"],["盘子","pánzi","тарелка","L10"],["裤子","kùzi","штаны","L10"],
+  ["只","zhī","счётное (животные)","L10"],
+  // L11
+  ["现在","xiànzài","сейчас","L11"],["点","diǎn","час","L11"],["分","fēn","минута","L11"],
+  ["中午","zhōngwǔ","полдень","L11"],["吃饭","chīfàn","есть, кушать","L11"],["时候","shíhou","время, момент","L11"],
+  ["回","huí","возвращаться","L11"],["电影","diànyǐng","фильм, кино","L11"],["电影院","diànyǐngyuàn","кинотеатр","L11"],
+  ["住","zhù","жить, проживать","L11"],["前","qián","до; назад (о времени)","L11"],["北京","Běijīng","Пекин","L11"],
+  ["莫斯科","Mòsīkē","Москва","L11"],["圣彼得堡","Shèngbǐdébǎo","Санкт-Петербург","L11"],
+  ["首都","shǒudū","столица","L11"],["零","líng","ноль","L11"],
+  // L12
+  ["天气","tiānqì","погода","L12"],["怎么样","zěnmeyàng","как; как тебе","L12"],["太","tài","слишком","L12"],
+  ["热","rè","горячий, жаркий","L12"],["冷","lěng","холодный","L12"],["下雨","xiàyǔ","идёт дождь","L12"],
+  ["雨","yǔ","дождь","L12"],["小姐","xiǎojiě","девушка, мисс","L12"],["来","lái","прийти","L12"],
+  ["身体","shēntǐ","тело, здоровье","L12"],["爱","ài","любить, нравиться","L12"],["水","shuǐ","вода","L12"],
+  ["水果","shuǐguǒ","фрукты","L12"],
+];
+
+// GRAMMAR: [中文, перевод, урок, грамматический пункт]
+const GRAMMAR = [
+  ["你叫什么名字？","Как тебя зовут?","L3","什么 — что"],
+  ["这是什么书？","Что это за книга?","L3","什么 — что"],
+  ["李月是老师。","Ли Юэ — учитель.","L3","是 — связка"],
+  ["我不是学生。","Я не ученик.","L3","是 — связка"],
+  ["你是中国人吗？","Ты китаец?","L3","吗 — общий вопрос"],
+  ["她是谁？","Кто она?","L4","谁 — кто"],
+  ["你是哪国人？","Из какой ты страны?","L4","哪 — который"],
+  ["这是我朋友的书。","Это книга моего друга.","L4","的 — притяжательная"],
+  ["我不是老师，我是学生。你呢？","Я не учитель, я ученик. А ты?","L4","呢 — переспрос"],
+  ["你有几个朋友？","Сколько у тебя друзей?","L5","几 — сколько (до 10)"],
+  ["你女儿几岁了？","Сколько лет твоей дочери?","L5","了 — смена ситуации"],
+  ["李老师今年五十岁了。","Учителю Ли в этом году 50 лет.","L5","了 — смена ситуации"],
+  ["你多大了？","Сколько тебе лет?","L5","多大 — возраст"],
+  ["我会说汉语和英语。","Я умею говорить по-китайски и по-английски.","L6","会 — уметь"],
+  ["我不会做中国菜。","Я не умею готовить китайскую еду.","L6","会 — уметь"],
+  ["中国菜很好吃。","Китайская еда очень вкусная.","L6","прилагательное-сказуемое"],
+  ["这个字怎么写？","Как пишется этот иероглиф?","L6","怎么 — как"],
+  ["今天9月1号，星期三。","Сегодня 1 сентября, среда.","L7","дата"],
+  ["明天星期三。","Завтра среда.","L7","именное сказуемое"],
+  ["我去学校看书。","Я иду в школу читать.","L7","несколько глаголов"],
+  ["我想买一个杯子。","Я хочу купить кружку.","L8","想 — хотеть"],
+  ["这个杯子多少钱？","Сколько стоит эта кружка?","L8","多少 — сколько"],
+  ["我家有三口人。","В моей семье три человека.","L8","счётные слова"],
+  ["我妈妈在家。","Моя мама дома.","L9","在 — находиться"],
+  ["小猫在椅子下面。","Котёнок под стулом.","L9","在 + послелог"],
+  ["你儿子在哪儿工作？","Где работает твой сын?","L9","哪儿 — где"],
+  ["我在朋友家喝茶。","Я пью чай у друга дома.","L9","在 + действие"],
+  ["桌子上有一个电脑和一本书。","На столе компьютер и книга.","L10","место + 有"],
+  ["学校里没有商店。","В школе нет магазина.","L10","没有"],
+  ["我能坐这儿吗？","Можно мне здесь сесть?","L10","能 — можно"],
+  ["请坐。","Садитесь, пожалуйста.","L10","请 — просьба"],
+  ["现在几点？","Который сейчас час?","L11","время"],
+  ["妈妈六点做饭。","Мама готовит в шесть.","L11","время до сказуемого"],
+  ["我星期一去北京。","В понедельник я еду в Пекин.","L11","время"],
+  ["你什么时候回北京？","Когда ты возвращаешься в Пекин?","L11","时候 / 前"],
+  ["今天天气怎么样？","Какая сегодня погода?","L12","怎么样"],
+  ["太热了。","Слишком жарко.","L12","太……了"],
+  ["我身体不太好。","Я неважно себя чувствую.","L12","подлеж.-сказуемая группа"],
+  ["明天会下雨吗？","Завтра будет дождь?","L12","会 — вероятность"],
+];
+
+// Глоссы отдельных иероглифов (для режима «Иероглифы»)
+const CHAR_GLOSS = {
+  "你":["nǐ","ты"],"好":["hǎo","хорошо"],"您":["nín","Вы"],"我":["wǒ","я"],"他":["tā","он"],"她":["tā","она"],
+  "们":["men","суффикс мн.ч."],"吗":["ma","вопр. частица"],"很":["hěn","очень"],"也":["yě","тоже"],
+  "高":["gāo","высокий"],"兴":["xìng","радость"],"忙":["máng","занятой"],"生":["shēng","рождаться; жизнь"],
+  "气":["qì","воздух; дух"],"认":["rèn","узнавать"],"识":["shí","знать"],"对":["duì","верный"],"起":["qǐ","вставать"],
+  "没":["méi","не (иметь)"],"关":["guān","закрывать"],"系":["xì","связь"],
+  "谢":["xiè","благодарить"],"用":["yòng","использовать"],"客":["kè","гость"],"再":["zài","снова"],"见":["jiàn","видеть"],
+  "叫":["jiào","звать"],"什":["shén","что"],"么":["me","частица"],"名":["míng","имя"],"字":["zì","знак"],
+  "老":["lǎo","старый"],"师":["shī","наставник"],"是":["shì","быть"],"学":["xué","учиться"],"国":["guó","страна"],
+  "中":["zhōng","середина"],"人":["rén","человек"],"美":["měi","красивый"],"俄":["é","Россия"],"罗":["luó","сеть"],
+  "斯":["sī","этот"],"法":["fǎ","закон; Франция"],"德":["dé","добродетель; Германия"],"英":["yīng","герой; Англия"],
+  "日":["rì","солнце; день"],"本":["běn","корень; счётное"],"这":["zhè","это"],"书":["shū","книга"],"不":["bù","не"],
+  "谁":["shéi","кто"],"的":["de","частица"],"汉":["hàn","китайский"],"语":["yǔ","язык"],"言":["yán","речь"],
+  "哪":["nǎ","который"],"同":["tóng","одинаковый"],"呢":["ne","частица"],"朋":["péng","друг"],"友":["yǒu","друг"],
+  "个":["gè","счётное"],"家":["jiā","дом; семья"],"有":["yǒu","иметь"],"口":["kǒu","рот; счётное"],"女":["nǚ","женщина"],
+  "儿":["ér","ребёнок; сын"],"几":["jǐ","сколько"],"岁":["suì","год (возраст)"],"今":["jīn","нынешний"],"年":["nián","год"],
+  "了":["le","частица"],"多":["duō","много"],"大":["dà","большой"],"小":["xiǎo","маленький"],
+  "爷":["yé","дед"],"奶":["nǎi","бабушка"],"爸":["bà","папа"],"妈":["mā","мама"],"哥":["gē","ст. брат"],
+  "姐":["jiě","ст. сестра"],"弟":["dì","мл. брат"],"妹":["mèi","мл. сестра"],
+  "会":["huì","уметь"],"说":["shuō","говорить"],"菜":["cài","блюдо; овощи"],"做":["zuò","делать"],"吃":["chī","есть"],
+  "写":["xiě","писать"],"怎":["zěn","как"],"读":["dú","читать"],"咖":["kā","(кофе)"],"啡":["fēi","(кофе)"],
+  "公":["gōng","общий"],"园":["yuán","сад"],"机":["jī","машина"],"场":["chǎng","площадь"],"车":["chē","машина"],
+  "站":["zhàn","стоять; станция"],"请":["qǐng","просить"],"问":["wèn","спрашивать"],"号":["hào","номер"],"月":["yuè","месяц"],
+  "星":["xīng","звезда"],"期":["qī","срок"],"昨":["zuó","вчера"],"明":["míng","светлый; завтра"],"去":["qù","идти"],
+  "校":["xiào","школа"],"看":["kàn","смотреть"],"银":["yín","серебро"],"行":["háng","ряд; банк"],"词":["cí","слово"],
+  "典":["diǎn","словарь"],"蓝":["lán","синий"],"色":["sè","цвет"],"饭":["fàn","еда"],"馆":["guǎn","заведение"],
+  "想":["xiǎng","хотеть"],"喝":["hē","пить"],"茶":["chá","чай"],"米":["mǐ","рис"],"上":["shàng","верх"],
+  "下":["xià","низ"],"午":["wǔ","полдень"],"商":["shāng","торговля"],"买":["mǎi","покупать"],"杯":["bēi","стакан"],
+  "子":["zi","суффикс"],"少":["shǎo","мало"],"钱":["qián","деньги"],"块":["kuài","юань; кусок"],"那":["nà","тот"],
+  "手":["shǒu","рука"],"表":["biǎo","часы"],"套":["tào","комплект"],"百":["bǎi","сто"],
+  "猫":["māo","кот"],"狗":["gǒu","собака"],"在":["zài","в; находиться"],"面":["miàn","сторона; мука"],"椅":["yǐ","стул"],
+  "工":["gōng","труд"],"作":["zuò","делать"],"医":["yī","медицина"],"院":["yuàn","двор; учреждение"],"包":["bāo","сумка; хлеб"],
+  "条":["tiáo","полоска; счётное"],"电":["diàn","электричество"],"脑":["nǎo","мозг"],"话":["huà","речь"],
+  "桌":["zhuō","стол"],"和":["hé","и"],"里":["lǐ","внутри"],"前":["qián","перед; до"],"后":["hòu","после"],
+  "坐":["zuò","сидеть"],"能":["néng","мочь"],"盘":["pán","тарелка"],"裤":["kù","штаны"],"只":["zhī","счётное"],
+  "现":["xiàn","сейчас"],"点":["diǎn","точка; час"],"分":["fēn","минута; делить"],"候":["hòu","ждать; время"],
+  "回":["huí","возвращаться"],"影":["yǐng","тень; фильм"],"住":["zhù","жить"],"北":["běi","север"],"京":["jīng","столица"],
+  "莫":["mò","не"],"科":["kē","раздел"],"圣":["shèng","святой"],"彼":["bǐ","тот"],"得":["dé","получать"],"堡":["bǎo","крепость"],
+  "首":["shǒu","голова; первый"],"都":["dū","столица"],"零":["líng","ноль"],
+  "天":["tiān","небо; день"],"样":["yàng","вид"],"太":["tài","слишком"],"热":["rè","жаркий"],"冷":["lěng","холодный"],
+  "雨":["yǔ","дождь"],"来":["lái","приходить"],"身":["shēn","тело"],"体":["tǐ","тело"],"爱":["ài","любить"],
+  "水":["shuǐ","вода"],"果":["guǒ","плод"],"镯":["zhuó","браслет"],"王":["wáng","король"],"方":["fāng","сторона"],"鹏":["péng","птица Пэн"],
+};
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
+<script>
+"use strict";
+
+const STORAGE_KEY = "hsk1_trainer_state_v1";
+const CJK_RE = /[\u3400-\u9fff]/u;
+const $ = (id) => document.getElementById(id);
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function() {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle(items, seed) {
+  const out = items.slice();
+  const rnd = mulberry32(seed);
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function randomSeed() {
+  return 1000 + Math.floor(Math.random() * 9000);
+}
+
+function esc(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;"
+  }[ch]));
+}
+
+const state = {
+  tab: "words",
+  lesson: "all",
+  seed: randomSeed(),
+  wordMode: "ru2zh",
+  grammarMode: "ru2zh",
+  quizMode: "ru2zh",
+  wordPos: 0,
+  grammarPos: 0,
+  hanziPos: 0,
+  quizCorrect: 0,
+  quizTotal: 0,
+  positions: {}
+};
+
+let wordOrder = [];
+let grammarOrder = [];
+let hanziChars = [];
+let wordRevealed = false;
+let grammarRevealed = false;
+let writer = null;
+let loopTimer = null;
+let quizCurrent = null;
+let quizAnswered = false;
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    Object.assign(state, JSON.parse(raw));
+  } catch (_) {}
+}
+
+function lessons() {
+  return [...new Set(VOCAB.map((item) => item[3]))].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+}
+
+function lessonItems(items) {
+  return state.lesson === "all" ? items : items.filter((item) => item[3] === state.lesson);
+}
+
+function positionKey(kind) {
+  return [kind, state.lesson, state.seed].join("_");
+}
+
+function rememberPositions() {
+  state.positions[positionKey("word")] = state.wordPos;
+  state.positions[positionKey("grammar")] = state.grammarPos;
+  state.positions[positionKey("hanzi")] = state.hanziPos;
+}
+
+function restorePositions() {
+  state.wordPos = state.positions[positionKey("word")] || 0;
+  state.grammarPos = state.positions[positionKey("grammar")] || 0;
+  state.hanziPos = state.positions[positionKey("hanzi")] || 0;
+}
+
+function buildOrders() {
+  wordOrder = seededShuffle(lessonItems(VOCAB), state.seed);
+  grammarOrder = seededShuffle(lessonItems(GRAMMAR), state.seed + 37);
+  const seen = new Set();
+  hanziChars = [];
+  for (const item of lessonItems(VOCAB)) {
+    for (const ch of [...item[0]]) {
+      if (CJK_RE.test(ch) && !seen.has(ch)) {
+        seen.add(ch);
+        hanziChars.push(ch);
+      }
+    }
+  }
+  hanziChars = seededShuffle(hanziChars, state.seed + 73);
+  state.wordPos = Math.min(state.wordPos, Math.max(0, wordOrder.length - 1));
+  state.grammarPos = Math.min(state.grammarPos, Math.max(0, grammarOrder.length - 1));
+  state.hanziPos = Math.min(state.hanziPos, Math.max(0, hanziChars.length - 1));
+}
+
+function renderLessons() {
+  const items = [{ key: "all", label: "Все уроки" }, ...lessons().map((l) => ({ key: l, label: l }))];
+  $("lesson-row").innerHTML = items.map((item) =>
+    `<button class="lesson-btn ${item.key === state.lesson ? "active" : ""}" data-lesson="${item.key}">${item.label}</button>`
+  ).join("");
+}
+
+function renderTabs() {
+  document.querySelectorAll("#tabs button").forEach((button) => button.classList.toggle("active", button.dataset.tab === state.tab));
+  document.querySelectorAll(".pane").forEach((pane) => pane.classList.toggle("active", pane.id === "pane-" + state.tab));
+}
+
+function renderModeButtons() {
+  document.querySelectorAll("#word-mode button").forEach((button) => button.classList.toggle("active", button.dataset.mode === state.wordMode));
+  document.querySelectorAll("#grammar-mode button").forEach((button) => button.classList.toggle("active", button.dataset.mode === state.grammarMode));
+  document.querySelectorAll("#quiz-mode button").forEach((button) => button.classList.toggle("active", button.dataset.mode === state.quizMode));
+}
+
+function currentCounter() {
+  if (state.tab === "words") return `${wordOrder.length ? state.wordPos + 1 : 0} / ${wordOrder.length}`;
+  if (state.tab === "grammar") return `${grammarOrder.length ? state.grammarPos + 1 : 0} / ${grammarOrder.length}`;
+  if (state.tab === "hanzi") return `${hanziChars.length ? state.hanziPos + 1 : 0} / ${hanziChars.length}`;
+  return `Счёт: ${state.quizCorrect} / ${state.quizTotal}`;
+}
+
+function renderTop() {
+  $("counter").textContent = currentCounter();
+  $("seed-display").textContent = "сид " + state.seed;
+}
+
+function cardFace(item, mode, type) {
+  const chinese = item[0], pinyin = type === "word" ? item[1] : "", russian = type === "word" ? item[2] : item[1];
+  const point = type === "grammar" ? item[3] : item[3];
+  if (mode === "ru2zh") {
+    return {
+      front: `<div class="russian">${esc(russian)}</div><div class="meta">${esc(point)}</div>`,
+      back: `<div class="chinese">${esc(chinese)}</div>${pinyin ? `<div class="pinyin">${esc(pinyin)}</div>` : ""}<div class="meta">${esc(point)}</div>`
+    };
+  }
+  return {
+    front: `<div class="chinese">${esc(chinese)}</div>${pinyin ? `<div class="pinyin">${esc(pinyin)}</div>` : ""}<div class="meta">${esc(point)}</div>`,
+    back: `<div class="russian">${esc(russian)}</div><div class="meta">${esc(point)}</div>`
+  };
+}
+
+function renderWord() {
+  const card = $("word-card");
+  card.classList.toggle("revealed", wordRevealed);
+  if (!wordOrder.length) {
+    $("word-front").innerHTML = `<div class="russian">Нет слов для этого урока</div>`;
+    $("word-back").innerHTML = "";
+    return;
+  }
+  const face = cardFace(wordOrder[state.wordPos], state.wordMode, "word");
+  $("word-front").innerHTML = face.front;
+  $("word-back").innerHTML = face.back;
+}
+
+function renderGrammar() {
+  const card = $("grammar-card");
+  card.classList.toggle("revealed", grammarRevealed);
+  if (!grammarOrder.length) {
+    $("grammar-front").innerHTML = `<div class="russian">Нет грамматики для этого урока</div>`;
+    $("grammar-back").innerHTML = "";
+    return;
+  }
+  const face = cardFace(grammarOrder[state.grammarPos], state.grammarMode, "grammar");
+  $("grammar-front").innerHTML = face.front;
+  $("grammar-back").innerHTML = face.back;
+}
+
+function fallbackHanzi(char, message) {
+  $("hz-target").innerHTML = `<div class="hanzi-big">${esc(char)}</div>`;
+  $("hz-msg").textContent = message || "Анимация загрузится, если доступен интернет.";
+}
+
+function renderHanziGrid() {
+  $("hz-grid").innerHTML = hanziChars.map((char, i) =>
+    `<button class="hz-chip ${i === state.hanziPos ? "active" : ""}" data-index="${i}">${esc(char)}</button>`
+  ).join("");
+}
+
+function createWriter(char) {
+  stopLoop();
+  writer = null;
+  $("hz-target").innerHTML = "";
+  $("hz-msg").textContent = "";
+  if (!window.HanziWriter) {
+    fallbackHanzi(char);
+    return;
+  }
+  try {
+    writer = HanziWriter.create("hz-target", char, {
+      width: $("hz-target").clientWidth,
+      height: $("hz-target").clientHeight,
+      padding: 14,
+      showOutline: true,
+      showCharacter: false,
+      strokeAnimationSpeed: 1.1,
+      delayBetweenStrokes: 260,
+      radicalColor: "#c00"
+    });
+  } catch (_) {
+    fallbackHanzi(char, "Не удалось загрузить данные для анимации.");
+  }
+}
+
+function renderHanzi() {
+  renderHanziGrid();
+  if (!hanziChars.length) {
+    fallbackHanzi("字", "Нет иероглифов для этого урока.");
+    $("hz-info").innerHTML = "";
+    return;
+  }
+  const char = hanziChars[state.hanziPos];
+  const gloss = CHAR_GLOSS[char] || ["", "из словаря урока"];
+  $("hz-info").innerHTML = `
+    <div class="chinese">${esc(char)}</div>
+    <div class="pinyin">${esc(gloss[0] || "")}</div>
+    <div class="russian">${esc(gloss[1] || "")}</div>
+  `;
+  createWriter(char);
+}
+
+function quizPool() {
+  return wordOrder.filter((item) => CJK_RE.test(item[0]) && item[2]);
+}
+
+function renderQuizQuestion() {
+  const pool = quizPool();
+  quizAnswered = false;
+  if (pool.length < 4) {
+    $("quiz-q").innerHTML = `<div class="russian">Для теста нужно минимум 4 слова в уроке</div>`;
+    $("quiz-opts").innerHTML = "";
+    return;
+  }
+  const rnd = mulberry32(Date.now() + state.seed + state.quizTotal);
+  quizCurrent = pool[Math.floor(rnd() * pool.length)];
+  const wrong = seededShuffle(pool.filter((item) => item !== quizCurrent), Math.floor(rnd() * 999999)).slice(0, 3);
+  const options = seededShuffle([quizCurrent, ...wrong], Math.floor(rnd() * 999999));
+  if (state.quizMode === "ru2zh") {
+    $("quiz-q").innerHTML = `<div class="russian">${esc(quizCurrent[2])}</div><div class="pinyin">${esc(quizCurrent[1])}</div>`;
+  } else {
+    $("quiz-q").innerHTML = `<div class="chinese">${esc(quizCurrent[0])}</div><div class="pinyin">${esc(quizCurrent[1])}</div>`;
+  }
+  $("quiz-opts").innerHTML = options.map((item) => {
+    const label = state.quizMode === "ru2zh" ? item[0] : item[2];
+    return `<button class="quiz-opt" data-answer="${item === quizCurrent ? "1" : "0"}">${esc(label)}</button>`;
+  }).join("");
+}
+
+function renderQuizScore() {
+  $("quiz-score").textContent = `Счёт: ${state.quizCorrect} / ${state.quizTotal}`;
+}
+
+function renderAll() {
+  renderTabs();
+  renderLessons();
+  renderModeButtons();
+  renderTop();
+  renderWord();
+  renderGrammar();
+  if (state.tab === "hanzi") renderHanzi();
+  renderQuizScore();
+  if (state.tab === "quiz" && !quizCurrent) renderQuizQuestion();
+}
+
+function setLesson(lesson) {
+  rememberPositions();
+  state.lesson = lesson;
+  restorePositions();
+  wordRevealed = false;
+  grammarRevealed = false;
+  quizCurrent = null;
+  buildOrders();
+  saveState();
+  renderAll();
+}
+
+function setSeed(seed) {
+  rememberPositions();
+  state.seed = seed;
+  restorePositions();
+  wordRevealed = false;
+  grammarRevealed = false;
+  quizCurrent = null;
+  buildOrders();
+  saveState();
+  renderAll();
+}
+
+function move(kind, delta) {
+  if (kind === "word" && wordOrder.length) {
+    state.wordPos = (state.wordPos + delta + wordOrder.length) % wordOrder.length;
+    wordRevealed = false;
+  }
+  if (kind === "grammar" && grammarOrder.length) {
+    state.grammarPos = (state.grammarPos + delta + grammarOrder.length) % grammarOrder.length;
+    grammarRevealed = false;
+  }
+  if (kind === "hanzi" && hanziChars.length) {
+    state.hanziPos = (state.hanziPos + delta + hanziChars.length) % hanziChars.length;
+  }
+  saveState();
+  renderAll();
+}
+
+function stopLoop() {
+  if (loopTimer) clearInterval(loopTimer);
+  loopTimer = null;
+}
+
+function animateChar(loop) {
+  stopLoop();
+  if (!writer) {
+    $("hz-msg").textContent = "Анимация недоступна без интернета.";
+    return;
+  }
+  const run = () => writer.animateCharacter();
+  run();
+  if (loop) loopTimer = setInterval(run, 4200);
+}
+
+loadState();
+buildOrders();
+
+$("tabs").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-tab]");
+  if (!button) return;
+  state.tab = button.dataset.tab;
+  quizCurrent = state.tab === "quiz" ? quizCurrent : null;
+  saveState();
+  renderAll();
+});
+
+$("lesson-row").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-lesson]");
+  if (button) setLesson(button.dataset.lesson);
+});
+
+$("word-mode").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-mode]");
+  if (!button) return;
+  state.wordMode = button.dataset.mode;
+  wordRevealed = false;
+  saveState();
+  renderAll();
+});
+
+$("grammar-mode").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-mode]");
+  if (!button) return;
+  state.grammarMode = button.dataset.mode;
+  grammarRevealed = false;
+  saveState();
+  renderAll();
+});
+
+$("quiz-mode").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-mode]");
+  if (!button) return;
+  state.quizMode = button.dataset.mode;
+  quizCurrent = null;
+  saveState();
+  renderAll();
+});
+
+$("word-card").addEventListener("click", () => { wordRevealed = true; renderWord(); });
+$("word-reveal").addEventListener("click", () => { wordRevealed = true; renderWord(); });
+$("word-prev").addEventListener("click", () => move("word", -1));
+$("word-next").addEventListener("click", () => move("word", 1));
+
+$("grammar-card").addEventListener("click", () => { grammarRevealed = true; renderGrammar(); });
+$("grammar-reveal").addEventListener("click", () => { grammarRevealed = true; renderGrammar(); });
+$("grammar-prev").addEventListener("click", () => move("grammar", -1));
+$("grammar-next").addEventListener("click", () => move("grammar", 1));
+$("grammar-shuffle").addEventListener("click", () => setSeed(randomSeed()));
+
+$("btn-shuffle").addEventListener("click", () => setSeed(randomSeed()));
+$("btn-seed").addEventListener("click", () => {
+  $("seed-panel").classList.toggle("open");
+  $("seed-input").value = "";
+  if ($("seed-panel").classList.contains("open")) $("seed-input").focus();
+});
+$("seed-apply").addEventListener("click", () => {
+  const value = parseInt($("seed-input").value, 10);
+  if (!Number.isFinite(value) || value < 1000 || value > 9999) {
+    $("seed-input").focus();
+    return;
+  }
+  $("seed-panel").classList.remove("open");
+  setSeed(value);
+});
+$("seed-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("seed-apply").click();
+});
+
+$("hz-grid").addEventListener("click", (e) => {
+  const button = e.target.closest("button[data-index]");
+  if (!button) return;
+  state.hanziPos = Number(button.dataset.index);
+  saveState();
+  renderAll();
+});
+$("hz-prev").addEventListener("click", () => move("hanzi", -1));
+$("hz-next").addEventListener("click", () => move("hanzi", 1));
+$("hz-animate").addEventListener("click", () => animateChar(false));
+$("hz-loop").addEventListener("click", () => animateChar(true));
+$("hz-quiz").addEventListener("click", () => {
+  stopLoop();
+  if (!writer) {
+    $("hz-msg").textContent = "Рукописная тренировка недоступна без интернета.";
+    return;
+  }
+  $("hz-msg").textContent = "Обведите иероглиф по порядку черт.";
+  writer.quiz({
+    onMistake: () => { $("hz-msg").textContent = "Не та черта. Попробуйте ещё раз."; },
+    onCorrectStroke: () => { $("hz-msg").textContent = "Верно."; },
+    onComplete: () => { $("hz-msg").textContent = "Готово."; }
+  });
+});
+
+$("quiz-opts").addEventListener("click", (e) => {
+  const button = e.target.closest(".quiz-opt");
+  if (!button || quizAnswered) return;
+  quizAnswered = true;
+  state.quizTotal += 1;
+  const correct = button.dataset.answer === "1";
+  if (correct) state.quizCorrect += 1;
+  document.querySelectorAll(".quiz-opt").forEach((opt) => {
+    opt.classList.add("disabled");
+    if (opt.dataset.answer === "1") opt.classList.add("correct");
+  });
+  if (!correct) button.classList.add("wrong");
+  saveState();
+  renderQuizScore();
+  renderTop();
+});
+$("quiz-next").addEventListener("click", () => {
+  quizCurrent = null;
+  renderQuizQuestion();
+});
+
+window.addEventListener("beforeunload", () => {
+  rememberPositions();
+  saveState();
+});
+
+renderAll();
+</script>
+</body>
+</html>
+
